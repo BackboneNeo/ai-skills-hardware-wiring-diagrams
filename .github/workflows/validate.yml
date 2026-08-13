@@ -21,3 +21,5 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate bundled example
         run: python scripts/validate_wiring.py --svg assets/annotated-example.svg --netlist assets/example-netlist.json
+      - name: Validate bundled Visio specification
+        run: python scripts/validate_visio_spec.py assets/annotated-example.visio.json --netlist assets/example-netlist.json

@@ -1,6 +1,6 @@
 ---
 name: ai-skills-hardware-wiring-diagrams
-description: Create, revise, and validate clear hardware wiring and assembly diagrams from component photographs, datasheets, pinouts, connector drawings, and existing SVGs. Use for GPIO headers, UART, I2C, SPI, CAN, RS-485, power distribution, batteries, regulators, sensors, cameras, flight controllers, callout pinouts, soldering instructions, A4/A3 layouts, SVG/PNG/PDF exports, or any diagram where electrical correctness, pin numbering, readable labels, non-overlapping routes, and visible connection endpoints must be proven.
+description: Create, revise, and validate clear hardware wiring and assembly diagrams from component photographs, datasheets, pinouts, connector drawings, existing SVGs, and Microsoft Visio files. Use for GPIO headers, UART, I2C, SPI, CAN, RS-485, power distribution, batteries, regulators, sensors, cameras, flight controllers, callout pinouts, soldering instructions, A4/A3 layouts, native editable VSDX, Visio COM automation, SVG/PNG/PDF exports, or any diagram where electrical correctness, pin numbering, readable labels, non-overlapping routes, visible connection endpoints, and native editability must be proven.
 ---
 
 # Hardware wiring diagram workflow
@@ -47,6 +47,8 @@ Use `scripts/validate_wiring.py` after every material routing change. Treat any 
 4. Place routes in a dedicated layer below terminals and text. Use a halo only to separate routes from the background; do not use it to conceal another route.
 5. Preserve editable SVG as the source. Render PNG/PDF only as derived review artifacts.
 
+When the user requests Microsoft Visio, read [visio-workflow.md](references/visio-workflow.md) and [visio-spec-schema.md](references/visio-spec-schema.md). Generate a native editable `.vsdx` with `scripts/New-HardwareWiringVisio.ps1`; never satisfy the request by placing the complete SVG or screenshot as one flat image.
+
 ## 5. Validate in layers
 
 1. Run structural SVG parsing and the wiring validator.
@@ -59,13 +61,16 @@ Use `scripts/validate_wiring.py` after every material routing change. Treat any 
 
 Use `scripts/render_svg.py`. In Codex Desktop, load workspace dependencies when available; the renderer also auto-detects the bundled Node.js and Sharp runtime for PNG output.
 
+For Visio output, run `scripts/Test-VisioEnvironment.ps1` first. Use `scripts/Find-VisioMasters.ps1` when a stencil or built-in master is preferable. Then generate, export a PNG/PDF preview, and inspect native shapes and glued connectors with `scripts/Inspect-HardwareWiringVisio.ps1`. Keep the netlist as the shared source of electrical truth for both SVG and VSDX outputs.
+
 Read [validation-gates.md](references/validation-gates.md) before declaring completion. Read [failure-patterns.md](references/failure-patterns.md) when repairing an existing diagram.
 
 ## 6. Deliver truthfully
 
-- Deliver the editable SVG, a rendered PNG, and PDF when requested.
+- Deliver the editable SVG or native editable VSDX, plus a rendered PNG and PDF when requested.
 - State the exact pin-to-pin mapping for newly added or changed connections.
 - State which pinouts were source-verified and which assumptions remain.
 - Report `completed` only when structural, electrical, routing, and visual gates pass.
 - Report `blocked` when an authoritative pinout, voltage rating, connector orientation, or mating-face interpretation cannot be established.
 - Never claim that a visually plausible route proves electrical correctness.
+- Never claim native Visio editability if the page is only a full-sheet imported image.

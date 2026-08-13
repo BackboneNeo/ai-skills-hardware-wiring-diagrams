@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "page": {
+    "name": "UART wiring",
+    "width_in": 13.0,
+    "height_in": 7.5
+  },
+  "title": "Controller to IMU UART wiring",
+  "labels": [
+    {
+      "id": "controller-title",
+      "x": 0.7,
+      "y": 0.45,
+      "width": 3.0,
+      "height": 0.55,
+      "text": "CONTROLLER · GPIO",
+      "fill": "#24323b",
+      "line": "#24323b",
+      "text_color": "#ffffff",
+      "font_size": 12,
+      "bold": true
+    },
+    {
+      "id": "imu-title",
+      "x": 9.3,
+      "y": 0.45,
+      "width": 3.0,
+      "height": 0.55,
+      "text": "IMU · UART",
+      "fill": "#24323b",
+      "line": "#24323b",
+      "text_color": "#ffffff",
+      "font_size": 12,
+      "bold": true
+    },
+    {
+      "id": "mapping-note",
+      "x": 4.45,
+      "y": 5.9,
+      "width": 4.1,
+      "height": 0.65,
+      "text": "TX → RX · RX ← TX · GND ↔ GND",
+      "fill": "#eef3f5",
+      "line": "#cbd5db",
+      "text_color": "#17232d",
+      "font_size": 10,
+      "bold": true
+    }
+  ],
+  "terminals": [
+    {
+      "id": "controller:8",
+      "x": 1.2,
+      "y": 1.55,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "8 · TX",
+      "fill": "#3276ca",
+      "line": "#255fa8",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    },
+    {
+      "id": "controller:10",
+      "x": 1.2,
+      "y": 3.0,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "10 · RX",
+      "fill": "#2b9fc9",
+      "line": "#217c9d",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    },
+    {
+      "id": "controller:6",
+      "x": 1.2,
+      "y": 4.45,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "6 · GND",
+      "fill": "#202529",
+      "line": "#111416",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    },
+    {
+      "id": "imu:5",
+      "x": 10.35,
+      "y": 1.55,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "5 · RX",
+      "fill": "#3276ca",
+      "line": "#255fa8",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    },
+    {
+      "id": "imu:7",
+      "x": 10.35,
+      "y": 3.0,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "7 · TX",
+      "fill": "#2b9fc9",
+      "line": "#217c9d",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    },
+    {
+      "id": "imu:3",
+      "x": 10.35,
+      "y": 4.45,
+      "width": 1.45,
+      "height": 0.62,
+      "text": "3 · GND",
+      "fill": "#202529",
+      "line": "#111416",
+      "text_color": "#ffffff",
+      "font_size": 11,
+      "bold": true
+    }
+  ],
+  "keepouts": [
+    {"id": "controller-title-zone", "x": 0.7, "y": 0.45, "width": 3.0, "height": 0.55},
+    {"id": "imu-title-zone", "x": 9.3, "y": 0.45, "width": 3.0, "height": 0.55},
+    {"id": "mapping-note-zone", "x": 4.45, "y": 5.9, "width": 4.1, "height": 0.65}
+  ],
+  "routes": [
+    {
+      "id": "uart-controller-to-imu",
+      "from": "controller:8",
+      "to": "imu:5",
+      "color": "#3276ca",
+      "waypoints": [[3.25, 1.86], [9.75, 1.86]],
+      "arrow": false
+    },
+    {
+      "id": "uart-imu-to-controller",
+      "from": "imu:7",
+      "to": "controller:10",
+      "color": "#2b9fc9",
+      "waypoints": [[9.75, 3.31], [3.25, 3.31]],
+      "arrow": false
+    },
+    {
+      "id": "uart-ground",
+      "from": "controller:6",
+      "to": "imu:3",
+      "color": "#202529",
+      "waypoints": [[3.25, 4.76], [9.75, 4.76]],
+      "arrow": false
+    }
+  ]
+}

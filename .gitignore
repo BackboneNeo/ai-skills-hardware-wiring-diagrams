@@ -2,9 +2,12 @@ __pycache__/
 *.pyc
 *.png
 *.pdf
+*.vsdx
+*.visio-report.json
 !assets/*.png
 !assets/*.pdf
 .DS_Store
 validation-report.json
 _smoke-project/
 _preview.png
+_visio-smoke/
