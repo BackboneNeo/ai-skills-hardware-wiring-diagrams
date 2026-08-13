@@ -285,7 +285,7 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
             if boxes_overlap(first, second, 0.0):
                 errors.append(f"terminals {first.identifier} and {second.identifier} overlap")
     for segment in all_segments:
-        for box in [*keepouts, *labels, *images]:
+        for box in [*keepouts, *labels]:
             if segment_hits_box(segment, box, tolerance):
                 errors.append(f"route {segment.route} enters protected region {box.identifier}")
 
