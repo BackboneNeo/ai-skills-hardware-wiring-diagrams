@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500" role="img" aria-labelledby="title desc">
+  <title id="title">Verified UART wiring example</title>
+  <desc id="desc">A controller UART connected to an IMU with separate orthogonal routes.</desc>
+  <style>
+    text{font-family:Inter,"Segoe UI",Arial,sans-serif;fill:#17232d}.card{fill:#fff;stroke:#cbd5db;stroke-width:2}.wire{fill:none;stroke-width:8;stroke-linecap:round}.label{font-size:20px;font-weight:700}.small{font-size:14px}.white{fill:#fff}
+  </style>
+  <rect width="900" height="500" fill="#f7f9fa"/>
+  <text x="40" y="45" class="label">Verified UART wiring example</text>
+  <rect x="40" y="80" width="280" height="340" rx="18" class="card"/>
+  <rect x="580" y="80" width="280" height="340" rx="18" class="card"/>
+  <text x="70" y="120" class="label">Controller</text><text x="610" y="120" class="label">IMU</text>
+  <rect data-keepout="controller-title" x="65" y="95" width="150" height="34" fill="none"/>
+  <rect data-keepout="imu-title" x="605" y="95" width="80" height="34" fill="none"/>
+  <g id="routes">
+    <path data-net="uart-controller-to-imu" data-from="controller:8" data-to="imu:5" data-signal="UART_TX" d="M280 172 H620" class="wire" stroke="#3276ca"/>
+    <path data-net="uart-imu-to-controller" data-from="imu:7" data-to="controller:10" data-signal="UART_RX" d="M620 262 H280" class="wire" stroke="#2f9fd0"/>
+    <path data-net="uart-ground" data-from="controller:6" data-to="imu:3" data-signal="GND" d="M280 352 H620" class="wire" stroke="#252a2e"/>
+  </g>
+  <g id="terminals" text-anchor="middle">
+    <rect data-terminal="controller:8" data-signal="UART_TX" data-voltage="3.3" data-direction="out" x="210" y="150" width="70" height="44" rx="7" fill="#3276ca"/><text x="245" y="178" class="small white">8 TX</text>
+    <rect data-terminal="controller:10" data-signal="UART_RX" data-voltage="3.3" data-direction="in" x="210" y="240" width="70" height="44" rx="7" fill="#2f9fd0"/><text x="245" y="268" class="small white">10 RX</text>
+    <rect data-terminal="controller:6" data-signal="GND" data-direction="ground" x="210" y="330" width="70" height="44" rx="7" fill="#252a2e"/><text x="245" y="358" class="small white">6 G</text>
+    <rect data-terminal="imu:5" data-signal="UART_RX" data-voltage="3.3" data-direction="in" x="620" y="150" width="70" height="44" rx="7" fill="#2f9fd0"/><text x="655" y="178" class="small white">5 RX</text>
+    <rect data-terminal="imu:7" data-signal="UART_TX" data-voltage="3.3" data-direction="out" x="620" y="240" width="70" height="44" rx="7" fill="#3276ca"/><text x="655" y="268" class="small white">7 TX</text>
+    <rect data-terminal="imu:3" data-signal="GND" data-direction="ground" x="620" y="330" width="70" height="44" rx="7" fill="#252a2e"/><text x="655" y="358" class="small white">3 G</text>
+  </g>
+</svg>

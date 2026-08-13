@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "components": {
+    "controller": {
+      "revision": "example",
+      "pins": {
+        "8": {"signal": "UART_TX", "direction": "out", "voltage": 3.3},
+        "10": {"signal": "UART_RX", "direction": "in", "voltage": 3.3},
+        "6": {"signal": "GND", "direction": "ground"}
+      }
+    },
+    "imu": {
+      "revision": "example",
+      "pins": {
+        "5": {"signal": "UART_RX", "direction": "in", "voltage": 3.3},
+        "7": {"signal": "UART_TX", "direction": "out", "voltage": 3.3},
+        "3": {"signal": "GND", "direction": "ground"}
+      }
+    }
+  },
+  "connections": [
+    {"id": "uart-controller-to-imu", "from": "controller:8", "to": "imu:5", "protocol": "uart"},
+    {"id": "uart-imu-to-controller", "from": "imu:7", "to": "controller:10", "protocol": "uart"},
+    {"id": "uart-ground", "from": "controller:6", "to": "imu:3", "protocol": "ground"}
+  ]
+}

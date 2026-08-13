@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.png
+*.pdf
+!assets/*.png
+!assets/*.pdf
+.DS_Store
+validation-report.json
+_smoke-project/
+_preview.png

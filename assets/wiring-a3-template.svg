@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="297mm" viewBox="0 0 4200 2970" role="img" aria-labelledby="title desc">
+  <title id="title">Hardware wiring diagram</title>
+  <desc id="desc">Editable A3 landscape wiring diagram template.</desc>
+  <defs>
+    <style>
+      text{font-family:Inter,"Segoe UI",Arial,sans-serif;fill:#17232d}
+      .sheet{fill:#f7f9fa}.component{fill:#fff;stroke:#cbd5db;stroke-width:2}
+      .wire{fill:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+      .halo{fill:none;stroke:#f7f9fa;stroke-width:16;stroke-linecap:round;stroke-linejoin:round}
+      .label{font-size:21px;font-weight:700}.small{font-size:16px}
+    </style>
+  </defs>
+  <rect width="4200" height="2970" class="sheet"/>
+  <text x="70" y="80" class="label">PROJECT · Hardware wiring diagram</text>
+  <text x="70" y="112" class="small">A3 landscape · editable SVG source</text>
+  <g id="routes" aria-label="Connection routes"/>
+  <g id="components" aria-label="Components and pinout callouts"/>
+  <g id="labels" aria-label="Labels and legend"/>
+</svg>

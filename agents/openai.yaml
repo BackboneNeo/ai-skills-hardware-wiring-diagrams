@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Hardware Wiring Diagrams"
+  short_description: "Create and validate readable wiring diagrams"
+  default_prompt: "Use $ai-skills-hardware-wiring-diagrams to create a verified hardware wiring diagram from these component pinouts."
