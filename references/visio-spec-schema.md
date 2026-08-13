@@ -35,7 +35,8 @@ Use JSON with page dimensions in inches and top-left coordinates.
       "to": "imu:5",
       "color": "#3276ca",
       "waypoints": [[4.0, 2.25], [10.0, 2.25]],
-      "arrow": false
+      "arrow": false,
+      "allow_label_overlap": false
     }
   ]
 }
@@ -54,5 +55,6 @@ Use JSON with page dimensions in inches and top-left coordinates.
 - Use explicit `waypoints` for hardware wiring. This prevents Visio auto-routing from merging parallel routes or crossing a dense header.
 - Put the first and last waypoints in the intended exit channel. The generator glues connector endpoints to the nearest terminal boundary.
 - Keep `crossing_policy` as `forbid` by default. Use `gap` or `arc` only when a right-angle crossing is unavoidable. Collinear overlap remains invalid under every policy.
+- Keep `allow_label_overlap` false or omit it. Set it to true only for a deliberately reviewed route whose unavoidable segment passes behind a non-critical component title/card; never use it to excuse an obscured terminal, pin number, warning, or contact label. Visually inspect every such exception after export.
 
 Run `scripts/validate_visio_spec.py` before Visio COM automation. The validator checks the netlist mapping, page bounds, shape overlap, route overlap/crossing, keep-outs, and endpoint proximity.

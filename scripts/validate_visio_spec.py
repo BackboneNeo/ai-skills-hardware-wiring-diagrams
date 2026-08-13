@@ -223,6 +223,7 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
         errors.append(f"netlist endpoint {identifier}: missing terminal shape")
     route_ids: set[str] = set()
     all_segments: list[Segment] = []
+    allow_label_overlap: set[str] = set()
     routes = spec.get("routes", [])
     for route in routes:
         identifier = str(route.get("id", ""))
@@ -248,6 +249,8 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
             errors.append(f"route {identifier}: missing terminal shape")
             continue
         segments = route_segments(route, terminals)
+        if route.get("allow_label_overlap") is True:
+            allow_label_overlap.add(identifier)
         if not segments:
             errors.append(f"route {identifier}: no geometry")
         for segment in segments:
@@ -285,6 +288,8 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
             if boxes_overlap(first, second, 0.0):
                 errors.append(f"terminals {first.identifier} and {second.identifier} overlap")
     for segment in all_segments:
+        if segment.route in allow_label_overlap:
+            continue
         for box in [*keepouts, *labels]:
             if segment_hits_box(segment, box, tolerance):
                 errors.append(f"route {segment.route} enters protected region {box.identifier}")
