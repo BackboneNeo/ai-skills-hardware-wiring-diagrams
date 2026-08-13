@@ -208,6 +208,19 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
             if not source_path.exists():
                 errors.append(f"image {box.identifier}: source file not found: {source}")
 
+    decorations: list[Box] = []
+    for item in spec.get("decorations", []):
+        try:
+            box = to_box(item)
+        except (KeyError, TypeError, ValueError):
+            errors.append(f"decoration {item.get('id', '<unnamed>')}: invalid bounds")
+            continue
+        decorations.append(box)
+        if item.get("kind", "rectangle") not in {"rectangle", "ellipse"}:
+            errors.append(f"decoration {box.identifier}: unsupported kind")
+        if box.x1 < 0 or box.y1 < 0 or box.x2 > page_width or box.y2 > page_height:
+            errors.append(f"decoration {box.identifier}: outside page")
+
     connection_by_id = {connection.get("id"): connection for connection in netlist.get("connections", []) if connection.get("id")}
     referenced_endpoints = {
         endpoint
@@ -299,7 +312,7 @@ def validate(spec_path: Path, netlist_path: Path, tolerance: float = 0.01) -> di
         "status": "passed" if not errors else "failed",
         "spec": str(spec_path),
         "netlist": str(netlist_path),
-        "counts": {"terminals": len(terminals), "labels": len(labels), "images": len(images), "routes": len(routes), "segments": len(all_segments), "keepouts": len(keepouts)},
+        "counts": {"terminals": len(terminals), "labels": len(labels), "images": len(images), "decorations": len(decorations), "routes": len(routes), "segments": len(all_segments), "keepouts": len(keepouts)},
         "errors": errors,
         "warnings": warnings,
     }

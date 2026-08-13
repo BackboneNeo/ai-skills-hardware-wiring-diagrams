@@ -72,9 +72,32 @@ function Import-ImageTL($Page, [double]$PageHeight, $Item, [string]$SpecDirector
     $shape.CellsU('Height').ResultIU = [double]$Item.height
     $shape.CellsU('PinX').ResultIU = [double]$Item.x + ([double]$Item.width / 2)
     $shape.CellsU('PinY').ResultIU = $PageHeight - [double]$Item.y - ([double]$Item.height / 2)
+    if ($Item.PSObject.Properties.Name -contains 'rotation_deg') {
+        $shape.CellsU('Angle').FormulaU = "{0} deg" -f ([double]$Item.rotation_deg)
+    }
     Set-ShapeData $shape 'DiagramId' ([string]$Item.id)
     Set-ShapeData $shape 'Role' 'component-image'
     Set-ShapeData $shape 'SourcePath' $source
+    return $shape
+}
+
+function Draw-DecorationTL($Page, [double]$PageHeight, $Item) {
+    $left = [double]$Item.x
+    $right = $left + [double]$Item.width
+    $top = $PageHeight - [double]$Item.y
+    $bottom = $top - [double]$Item.height
+    $kind = if ($Item.PSObject.Properties.Name -contains 'kind') { [string]$Item.kind } else { 'rectangle' }
+    if ($kind -eq 'ellipse') { $shape = $Page.DrawOval($left, $bottom, $right, $top) }
+    elseif ($kind -eq 'rectangle') { $shape = $Page.DrawRectangle($left, $bottom, $right, $top) }
+    else { throw "Unsupported decoration kind: $kind" }
+    $fill = if ($Item.PSObject.Properties.Name -contains 'fill') { [string]$Item.fill } else { '#eef3f5' }
+    $line = if ($Item.PSObject.Properties.Name -contains 'line') { [string]$Item.line } else { '#34434c' }
+    $shape.CellsU('FillForegnd').FormulaU = Convert-HexToRgbFormula $fill
+    $shape.CellsU('FillPattern').FormulaU = '1'
+    $shape.CellsU('LineColor').FormulaU = Convert-HexToRgbFormula $line
+    $shape.CellsU('LineWeight').FormulaU = '0.8 pt'
+    Set-ShapeData $shape 'DiagramId' ([string]$Item.id)
+    Set-ShapeData $shape 'Role' 'decoration'
     return $shape
 }
 
@@ -175,6 +198,12 @@ try {
     }
 
     $shapes = @{}
+    if ($null -ne $spec.decorations) {
+        foreach ($decoration in @($spec.decorations)) {
+            $shape = Draw-DecorationTL $page $pageHeight $decoration
+            $shapes[[string]$decoration.id] = $shape
+        }
+    }
     if ($null -ne $spec.images) {
         foreach ($image in @($spec.images)) {
             $shape = Import-ImageTL $page $pageHeight $image $specDirectory

@@ -23,7 +23,10 @@ Use JSON with page dimensions in inches and top-left coordinates.
     {"id": "controller-title", "x": 1.0, "y": 0.8, "width": 2.4, "height": 0.4, "text": "Controller"}
   ],
   "images": [
-    {"id": "controller-photo", "path": "images/controller.png", "x": 0.8, "y": 1.4, "width": 3.0, "height": 2.1}
+    {"id": "controller-photo", "path": "images/controller.png", "x": 0.8, "y": 1.4, "width": 3.0, "height": 2.1, "rotation_deg": 180}
+  ],
+  "decorations": [
+    {"id": "lens", "kind": "ellipse", "x": 1.4, "y": 1.8, "width": 0.8, "height": 0.8, "fill": "#17232d", "line": "#94a3ad"}
   ],
   "keepouts": [
     {"id": "controller-title", "x": 1.0, "y": 0.8, "width": 2.4, "height": 0.4}
@@ -51,6 +54,8 @@ Use JSON with page dimensions in inches and top-left coordinates.
 - Put a terminal at the exact displayed physical ordering required by the component orientation.
 - Use `labels` for editable component names, notes, warnings, and pinout captions.
 - Use `images` only for individual component photographs. Keep terminals, labels, routes, and callouts native and editable. Resolve relative image paths from the specification directory.
+- Use `rotation_deg` to keep a component photograph consistent with the documented board orientation.
+- Use `decorations` with `rectangle` or `ellipse` for simple native illustrations; keep functional text in `labels`.
 - Use `keepouts` to reserve label, photo, and contact-number space.
 - Use explicit `waypoints` for hardware wiring. This prevents Visio auto-routing from merging parallel routes or crossing a dense header.
 - Put the first and last waypoints in the intended exit channel. The generator glues connector endpoints to the nearest terminal boundary.
