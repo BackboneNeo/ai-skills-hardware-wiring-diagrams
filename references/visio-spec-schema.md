@@ -5,7 +5,7 @@ Use JSON with page dimensions in inches and top-left coordinates.
 ```json
 {
   "schema_version": 1,
-  "page": {"name": "Wiring", "width_in": 16.54, "height_in": 11.69, "crossing_policy": "forbid"},
+  "page": {"name": "Wiring", "width_in": 16.54, "height_in": 11.69, "crossing_policy": "forbid", "route_render_mode": "dynamic_connector"},
   "title": "Hardware wiring diagram",
   "terminals": [
     {
@@ -54,10 +54,12 @@ Use JSON with page dimensions in inches and top-left coordinates.
 - Put a terminal at the exact displayed physical ordering required by the component orientation.
 - Use `labels` for editable component names, notes, warnings, and pinout captions.
 - Use `images` only for individual component photographs. Keep terminals, labels, routes, and callouts native and editable. Resolve relative image paths from the specification directory.
+- Declare critical photographs explicitly in `images` even if a vector source also contains an SVG `<image>` reference; Visio import and ungrouping can omit linked image content.
 - Use `rotation_deg` to keep a component photograph consistent with the documented board orientation.
 - Use `decorations` with `rectangle` or `ellipse` for simple native illustrations; keep functional text in `labels`.
 - Use `keepouts` to reserve label, photo, and contact-number space.
 - Use explicit `waypoints` for hardware wiring. This prevents Visio auto-routing from merging parallel routes or crossing a dense header.
+- Set `page.route_render_mode` to `dynamic_connector` when each complete net must be one built-in Dynamic Connector. Waypoints become Geometry vertices inside that one object.
 - Put the first and last waypoints in the intended exit channel. The generator glues connector endpoints to the nearest terminal boundary.
 - Keep `crossing_policy` as `forbid` by default. Use `gap` or `arc` only when a right-angle crossing is unavoidable. Collinear overlap remains invalid under every policy.
 - Keep `allow_label_overlap` false or omit it. Set it to true only for a deliberately reviewed route whose unavoidable segment passes behind a non-critical component title/card; never use it to excuse an obscured terminal, pin number, warning, or contact label. Visually inspect every such exception after export.

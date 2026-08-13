@@ -3,9 +3,21 @@
   "page": {
     "name": "UART wiring",
     "width_in": 13.0,
-    "height_in": 7.5
+    "height_in": 7.5,
+    "crossing_policy": "forbid",
+    "route_render_mode": "dynamic_connector"
   },
   "title": "Controller to IMU UART wiring",
+  "images": [
+    {
+      "id": "component-photo",
+      "path": "annotated-example-preview.png",
+      "x": 5.5,
+      "y": 0.35,
+      "width": 2.0,
+      "height": 1.0
+    }
+  ],
   "labels": [
     {
       "id": "controller-title",

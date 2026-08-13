@@ -27,6 +27,7 @@ class VisioSpecValidationTests(unittest.TestCase):
     def test_overlapping_routes_fail(self):
         drawing = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
         drawing["routes"][1]["waypoints"] = [[9.75, 1.86], [3.25, 1.86]]
+        drawing["images"] = []
         with tempfile.TemporaryDirectory() as temp_dir:
             changed = Path(temp_dir) / "overlap.json"
             changed.write_text(json.dumps(drawing), encoding="utf-8")
@@ -37,6 +38,7 @@ class VisioSpecValidationTests(unittest.TestCase):
     def test_missing_netlist_route_fails(self):
         drawing = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
         drawing["routes"] = drawing["routes"][:-1]
+        drawing["images"] = []
         with tempfile.TemporaryDirectory() as temp_dir:
             changed = Path(temp_dir) / "missing.json"
             changed.write_text(json.dumps(drawing), encoding="utf-8")
@@ -47,6 +49,7 @@ class VisioSpecValidationTests(unittest.TestCase):
     def test_missing_terminal_fails(self):
         drawing = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
         drawing["terminals"] = [terminal for terminal in drawing["terminals"] if terminal["id"] != "imu:3"]
+        drawing["images"] = []
         with tempfile.TemporaryDirectory() as temp_dir:
             changed = Path(temp_dir) / "missing-terminal.json"
             changed.write_text(json.dumps(drawing), encoding="utf-8")
@@ -57,6 +60,7 @@ class VisioSpecValidationTests(unittest.TestCase):
     def test_explicit_gap_crossing_is_warning_not_error(self):
         drawing = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
         drawing["page"]["crossing_policy"] = "gap"
+        drawing["images"] = []
         drawing["routes"][1]["waypoints"] = [
             [9.75, 3.31],
             [6.5, 3.31],

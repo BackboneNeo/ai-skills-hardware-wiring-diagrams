@@ -58,8 +58,44 @@ function Draw-BoxTL($Page, [double]$PageHeight, $Item, [string]$DefaultFill, [st
     $fontSize = if ($Item.PSObject.Properties.Name -contains 'font_size') { [double]$Item.font_size } else { 9.0 }
     $bold = if ($Item.PSObject.Properties.Name -contains 'bold') { [bool]$Item.bold } else { $false }
     Set-CommonStyle $shape $fill $line $textColor $fontSize $bold
+    if ($Item.PSObject.Properties.Name -contains 'hidden' -and [bool]$Item.hidden) {
+        $shape.Text = ''
+        $shape.CellsU('FillPattern').FormulaU = '0'
+        $shape.CellsU('LinePattern').FormulaU = '0'
+    }
     Set-ShapeData $shape 'DiagramId' ([string]$Item.id)
     return $shape
+}
+
+function Import-VectorSourceTL($Page, [double]$PageHeight, $Item, [string]$SpecDirectory) {
+    $source = [string]$Item.path
+    if (-not [IO.Path]::IsPathRooted($source)) { $source = Join-Path $SpecDirectory $source }
+    $source = [IO.Path]::GetFullPath($source)
+    if (-not (Test-Path -LiteralPath $source)) { throw "Vector source not found: $source" }
+    $before = @($Page.Shapes | ForEach-Object { $_.ID })
+    $shape = $Page.Import($source)
+    $shape.CellsU('Width').ResultIU = [double]$Item.width
+    $shape.CellsU('Height').ResultIU = [double]$Item.height
+    $shape.CellsU('PinX').ResultIU = [double]$Item.x + ([double]$Item.width / 2)
+    $shape.CellsU('PinY').ResultIU = $PageHeight - [double]$Item.y - ([double]$Item.height / 2)
+    if ($Item.PSObject.Properties.Name -contains 'rotation_deg') {
+        $shape.CellsU('Angle').FormulaU = "{0} deg" -f ([double]$Item.rotation_deg)
+    }
+    [void]$shape.Ungroup()
+    $sourceId = [string]$Item.id
+    foreach ($child in @($Page.Shapes)) {
+        if ($before -notcontains $child.ID) {
+            Set-ShapeData $child 'SourceVectorId' $sourceId
+            Set-ShapeData $child 'Role' 'editable-vector-source'
+            # An imported full-page SVG background is a vector rectangle, not content.
+            # Delete it so editability inspection never mistakes it for a page-sized raster.
+            try {
+                $areaRatio = ($child.CellsU('Width').ResultIU * $child.CellsU('Height').ResultIU) / ([double]$Item.width * [double]$Item.height)
+                $childText = [string]$child.Text
+                if ($areaRatio -gt 0.95 -and [string]::IsNullOrWhiteSpace($childText)) { $child.Delete() }
+            } catch {}
+        }
+    }
 }
 
 function Import-ImageTL($Page, [double]$PageHeight, $Item, [string]$SpecDirectory) {
@@ -111,7 +147,7 @@ function Add-RouteHelper($Page, [double]$PageHeight, [string]$Id, [double]$X, [d
     return $shape
 }
 
-function Connect-Shapes($Page, $Application, $FromShape, $ToShape, [string]$NetId, [int]$SegmentIndex, [string]$Color, [bool]$Arrow) {
+function Connect-Shapes($Page, $Application, $FromShape, $ToShape, [string]$NetId, [int]$SegmentIndex, [string]$Color, [bool]$Arrow, [bool]$Hidden) {
     $connector = $Page.Drop($Application.ConnectorToolDataObject, 0, 0)
     $fromX = [double]$FromShape.CellsU('PinX').ResultIU
     $fromY = [double]$FromShape.CellsU('PinY').ResultIU
@@ -143,6 +179,7 @@ function Connect-Shapes($Page, $Application, $FromShape, $ToShape, [string]$NetI
     $connector.CellsU('EndX').GlueToPos($ToShape, $endXPercent, $endYPercent)
     $connector.CellsU('LineColor').FormulaU = Convert-HexToRgbFormula $Color
     $connector.CellsU('LineWeight').FormulaU = '1.6 pt'
+    if ($Hidden) { $connector.CellsU('LinePattern').FormulaU = '0' }
     if ($connector.CellExistsU('ConLineRouteExt', 0) -ne 0) { $connector.CellsU('ConLineRouteExt').FormulaU = '1' }
     if ($connector.CellExistsU('ShapeRouteStyle', 0) -ne 0) { $connector.CellsU('ShapeRouteStyle').FormulaU = '2' }
     $connector.CellsU('EndArrow').FormulaU = $(if ($Arrow) { '13' } else { '0' })
@@ -151,6 +188,127 @@ function Connect-Shapes($Page, $Application, $FromShape, $ToShape, [string]$NetI
     # Connectors belong below terminals and text so pin labels stay visible.
     $connector.SendToBack()
     return $connector
+}
+
+function Set-DynamicConnectorGeometry($Connector, [double]$PageHeight, $FromShape, $ToShape, $Route) {
+    # A Dynamic Connector owns one Geometry section. Its MoveTo/LineTo rows are
+    # editable route vertices, not separate Visio line shapes. Temporarily pause
+    # the routing engine while replacing those rows, then restore connector
+    # behavior and freeze the intentional manual route.
+    $points = [System.Collections.Generic.List[object]]::new()
+    $points.Add(@(
+        [double]$FromShape.CellsU('PinX').ResultIU,
+        [double]$FromShape.CellsU('PinY').ResultIU
+    ))
+    if ($null -ne $Route.waypoints) {
+        foreach ($point in @($Route.waypoints)) {
+            $waypointX = [double]($point[0])
+            $waypointY = $PageHeight - [double]($point[1])
+            $points.Add(@($waypointX, $waypointY))
+        }
+    }
+    $points.Add(@(
+        [double]$ToShape.CellsU('PinX').ResultIU,
+        [double]$ToShape.CellsU('PinY').ResultIU
+    ))
+    if ($points.Count -lt 2) { throw "Route $($Route.id) requires two endpoints." }
+
+    $Connector.CellsU('ConFixedCode').FormulaU = '2'
+    $Connector.CellsU('ObjType').FormulaU = '0'
+    for ($row = $Connector.RowCount(10) - 1; $row -ge 1; $row--) {
+        $Connector.DeleteRow(10, $row)
+    }
+    foreach ($index in 0..([int]$points.Count - 1)) {
+        $tag = if ($index -eq 0) { 138 } else { 139 } # MoveTo / LineTo
+        $row = $Connector.AddRow(10, -1, $tag)
+        $localX = 0.0
+        $localY = 0.0
+        $Connector.XYFromPage(
+            [double]$points[$index][0],
+            [double]$points[$index][1],
+            [ref]$localX,
+            [ref]$localY
+        )
+        $Connector.CellsSRC(10, $row, 0).FormulaForceU = ('{0} in' -f $localX.ToString([Globalization.CultureInfo]::InvariantCulture))
+        $Connector.CellsSRC(10, $row, 1).FormulaForceU = ('{0} in' -f $localY.ToString([Globalization.CultureInfo]::InvariantCulture))
+    }
+    $Connector.CellsU('ObjType').FormulaU = '2'
+    $Connector.CellsU('ConFixedCode').FormulaU = '2'
+}
+
+function Draw-DynamicConnector($Page, $Application, [double]$PageHeight, $FromShape, $ToShape, $Route, $ConnectionsLayer) {
+    # Drop the actual built-in Dynamic Connector master. There is exactly one
+    # connector object for the complete electrical net; Visio owns its bends.
+    $connector = $Page.Drop($Application.ConnectorToolDataObject, 0, 0)
+    $connector.CellsU('BeginX').GlueToPos($FromShape, 0.5, 0.5)
+    $connector.CellsU('EndX').GlueToPos($ToShape, 0.5, 0.5)
+
+    # Point-to-point glue and native connector properties. Explicit bends are
+    # stored in this connector's Geometry rows by Set-DynamicConnectorGeometry.
+    $connector.CellsU('ObjType').FormulaU = '2'
+    $connector.CellsU('GlueType').FormulaU = '2'
+    $connector.CellsU('ConLineRouteExt').FormulaU = '1'
+    $connector.CellsU('ShapeRouteStyle').FormulaU = '1'
+    $connector.CellsU('ConFixedCode').FormulaU = '2'
+    if ($connector.CellExistsU('ShapePermeableX', 0) -ne 0) { $connector.CellsU('ShapePermeableX').FormulaU = '0' }
+    if ($connector.CellExistsU('ShapePermeableY', 0) -ne 0) { $connector.CellsU('ShapePermeableY').FormulaU = '0' }
+    $connector.CellsU('LineColor').FormulaU = Convert-HexToRgbFormula ([string]$Route.color)
+    $lineWeight = if ($Route.PSObject.Properties.Name -contains 'line_weight_pt') { [double]$Route.line_weight_pt } else { 2.3 }
+    $connector.CellsU('LineWeight').FormulaU = ("{0} pt" -f $lineWeight.ToString([Globalization.CultureInfo]::InvariantCulture))
+    $connector.CellsU('LinePattern').FormulaU = '1'
+    $connector.CellsU('EndArrow').FormulaU = $(if ([bool]$Route.arrow) { '13' } else { '0' })
+    Set-ShapeData $connector 'DiagramId' ([string]$Route.id)
+    Set-ShapeData $connector 'NetId' ([string]$Route.id)
+    Set-ShapeData $connector 'ConnectionId' ([string]$Route.id)
+    Set-ShapeData $connector 'From' ([string]$Route.from)
+    Set-ShapeData $connector 'To' ([string]$Route.to)
+    Set-ShapeData $connector 'Role' 'dynamic-electrical-connector'
+    Set-ShapeData $connector 'ConnectorMaster' 'Dynamic connector'
+    Set-DynamicConnectorGeometry $connector $PageHeight $FromShape $ToShape $Route
+    try { $connector.NameU = 'wire__' + (([string]$Route.id) -replace '[^A-Za-z0-9_]', '_') } catch {}
+    if ($null -ne $ConnectionsLayer) { [void]$ConnectionsLayer.Add($connector, 0) }
+    $connector.SendToBack()
+    return $connector
+}
+
+function Draw-RoutePolyline($Page, [double]$PageHeight, $FromShape, $ToShape, $Route, $ConnectionsLayer) {
+    # A complete electrical connection is one native 1-D Visio shape. This keeps
+    # every wire independently selectable while preserving all explicit bends.
+    $points = [System.Collections.Generic.List[double]]::new()
+    $points.Add([double]$FromShape.CellsU('PinX').ResultIU)
+    $points.Add([double]$FromShape.CellsU('PinY').ResultIU)
+    if ($null -ne $Route.waypoints) {
+        foreach ($point in @($Route.waypoints)) {
+            $points.Add([double]$point[0])
+            $points.Add($PageHeight - [double]$point[1])
+        }
+    }
+    $points.Add([double]$ToShape.CellsU('PinX').ResultIU)
+    $points.Add([double]$ToShape.CellsU('PinY').ResultIU)
+    if (($points.Count / 2) -lt 2) { throw "Route $($Route.id) requires at least two distinct points." }
+
+    # visPolyline1D = 8. Unlike a group of straight connector segments, this is
+    # a single Visio object with editable vertices and glued electrical ends.
+    $polyline = $Page.DrawPolyline([double[]]$points.ToArray(), 8)
+    $polyline.CellsU('BeginX').GlueToPos($FromShape, 0.5, 0.5)
+    $polyline.CellsU('EndX').GlueToPos($ToShape, 0.5, 0.5)
+    $polyline.CellsU('LineColor').FormulaU = Convert-HexToRgbFormula ([string]$Route.color)
+    $lineWeight = if ($Route.PSObject.Properties.Name -contains 'line_weight_pt') { [double]$Route.line_weight_pt } else { 2.3 }
+    $polyline.CellsU('LineWeight').FormulaU = ("{0} pt" -f $lineWeight.ToString([Globalization.CultureInfo]::InvariantCulture))
+    $hidden = ($Route.PSObject.Properties.Name -contains 'hidden' -and [bool]$Route.hidden)
+    $polyline.CellsU('LinePattern').FormulaU = $(if ($hidden) { '0' } else { '1' })
+    $polyline.CellsU('EndArrow').FormulaU = $(if ([bool]$Route.arrow) { '13' } else { '0' })
+    $polyline.CellsU('FillPattern').FormulaU = '0'
+    Set-ShapeData $polyline 'DiagramId' ([string]$Route.id)
+    Set-ShapeData $polyline 'NetId' ([string]$Route.id)
+    Set-ShapeData $polyline 'ConnectionId' ([string]$Route.id)
+    Set-ShapeData $polyline 'From' ([string]$Route.from)
+    Set-ShapeData $polyline 'To' ([string]$Route.to)
+    Set-ShapeData $polyline 'Role' 'electrical-connection'
+    try { $polyline.NameU = 'wire__' + (([string]$Route.id) -replace '[^A-Za-z0-9_]', '_') } catch {}
+    if ($null -ne $ConnectionsLayer) { [void]$ConnectionsLayer.Add($polyline, 0) }
+    $polyline.SendToBack()
+    return $polyline
 }
 
 $python = Get-Command python -ErrorAction SilentlyContinue
@@ -198,6 +356,14 @@ try {
     }
 
     $shapes = @{}
+    $connectionsLayer = $page.Layers.Add('Electrical connections - one shape per net')
+    $application.AutoLayout = $false
+    $page.LayoutRoutePassive = $true
+    if ($null -ne $spec.vector_sources) {
+        foreach ($vectorSource in @($spec.vector_sources)) {
+            Import-VectorSourceTL $page $pageHeight $vectorSource $specDirectory
+        }
+    }
     if ($null -ne $spec.decorations) {
         foreach ($decoration in @($spec.decorations)) {
             $shape = Draw-DecorationTL $page $pageHeight $decoration
@@ -227,6 +393,15 @@ try {
     if ($null -ne $spec.routes) { foreach ($route in @($spec.routes)) {
         $from = $shapes[[string]$route.from]
         $to = $shapes[[string]$route.to]
+        $routeRenderMode = if ($route.PSObject.Properties.Name -contains 'render_mode') { [string]$route.render_mode } elseif ($spec.page.PSObject.Properties.Name -contains 'route_render_mode') { [string]$spec.page.route_render_mode } else { 'segmented' }
+        if ($routeRenderMode -eq 'dynamic_connector') {
+            [void](Draw-DynamicConnector $page $application $pageHeight $from $to $route $connectionsLayer)
+            continue
+        }
+        if ($routeRenderMode -eq 'single_polyline') {
+            [void](Draw-RoutePolyline $page $pageHeight $from $to $route $connectionsLayer)
+            continue
+        }
         $nodes = [System.Collections.Generic.List[object]]::new()
         $nodes.Add($from)
         $pointIndex = 0
@@ -240,10 +415,13 @@ try {
         $nodes.Add($to)
         for ($index = 0; $index -lt $nodes.Count - 1; $index++) {
             $isLast = ($index -eq $nodes.Count - 2)
-            [void](Connect-Shapes $page $application $nodes[$index] $nodes[$index + 1] ([string]$route.id) $index ([string]$route.color) ([bool]$route.arrow -and $isLast))
+            $hidden = ($route.PSObject.Properties.Name -contains 'hidden' -and [bool]$route.hidden)
+            [void](Connect-Shapes $page $application $nodes[$index] $nodes[$index + 1] ([string]$route.id) $index ([string]$route.color) ([bool]$route.arrow -and $isLast) $hidden)
         }
     } }
 
+    # Native Dynamic Connectors already contain their explicit route vertices.
+    # Page-level automatic routing stays passive so it cannot overwrite them.
     [void]$document.SaveAs($OutputPath)
     if ($PreviewPng) {
         [IO.Directory]::CreateDirectory((Split-Path -Parent $PreviewPng)) | Out-Null

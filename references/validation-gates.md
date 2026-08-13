@@ -12,5 +12,7 @@
 | Layout | component and callout correspondence is unambiguous |
 | Rendering | SVG renders without missing relative assets |
 | Print review | full sheet and connector close-ups remain legible at output size |
+| Visio connector structure | one built-in `Dynamic Connector` shape per connection; both ends glued; no polylines, imported wire graphics, or segment chains |
+| Visio component images | every critical photograph is an explicit component-image shape and is visibly present in the exported preview |
 
 Run `scripts/validate_wiring.py --svg <diagram.svg> --netlist <netlist.json> --report <report.json>`. A clean report is necessary but not sufficient; finish with rendered visual review.

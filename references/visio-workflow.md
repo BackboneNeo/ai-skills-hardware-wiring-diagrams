@@ -7,7 +7,9 @@ Use this workflow on Windows when Microsoft Visio is installed and the user requ
 - Treat the JSON netlist as the electrical source of truth.
 - Treat a Visio drawing specification as the layout source of truth.
 - Create each component, functional pin label, physical pin number, note, and legend entry as a native Visio shape.
-- Create wires as native 1-D connectors and glue both ends to terminal shapes.
+- Create each complete wire as exactly one built-in `Dynamic Connector` master and glue both ends to terminal shapes.
+- Store explicit bends as MoveTo/LineTo rows in that connector's Geometry section. These rows are vertices of one connector object, not separate line shapes.
+- Do not use `DrawPolyline`, imported SVG/PNG wire graphics, or multiple joined connector shapes for a connection that must remain independently configurable.
 - Use orthogonal routing by default. Keep explicit waypoints when the diagram requires stable separate channels.
 - Keep functional labels and physical pin numbers editable. Do not rasterize dense GPIO callouts.
 - Never use a full-page SVG, PNG, or screenshot as the final Visio diagram.
@@ -64,6 +66,7 @@ These rules incorporate useful patterns from the MIT-licensed Visio automation s
 - Search the installed stencil rather than assuming that localized stencil/master names exist.
 - Use `Page.Drop(Application.ConnectorToolDataObject, ...)` for native connectors when available.
 - Glue `BeginX` and `EndX` to connection points or position cells. Verify glue formulas after saving and reopening.
+- For stable manual routing, temporarily suspend routing ownership, replace the connector's Geometry rows with the declared waypoints, restore `ObjType=2`, and set `ConFixedCode=2`. Leave `LayoutRoutePassive` enabled so page layout does not overwrite those bends.
 - Keep Visio hidden for automated validation and visible only when the user asks to watch or manually refine the page.
 - Create a backup before editing an existing `.vsdx`.
 
@@ -73,6 +76,7 @@ Require:
 
 - a non-empty `.vsdx` that reopens;
 - expected native 2-D shape and 1-D connector counts;
+- exactly one shape with master `Dynamic connector` for every declared connection ID;
 - every connector with glued begin and end formulas;
 - no single page-sized raster image acting as the complete diagram;
 - a non-blank exported preview;

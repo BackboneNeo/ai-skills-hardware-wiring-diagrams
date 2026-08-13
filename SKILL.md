@@ -47,7 +47,7 @@ Use `scripts/validate_wiring.py` after every material routing change. Treat any 
 4. Place routes in a dedicated layer below terminals and text. Use a halo only to separate routes from the background; do not use it to conceal another route.
 5. Preserve editable SVG as the source. Render PNG/PDF only as derived review artifacts.
 
-When the user requests Microsoft Visio, read [visio-workflow.md](references/visio-workflow.md) and [visio-spec-schema.md](references/visio-spec-schema.md). Generate a native editable `.vsdx` with `scripts/New-HardwareWiringVisio.ps1`; never satisfy the request by placing the complete SVG or screenshot as one flat image.
+When the user requests Microsoft Visio, read [visio-workflow.md](references/visio-workflow.md), [visio-spec-schema.md](references/visio-spec-schema.md), and [visio-native-connectors.md](references/visio-native-connectors.md). Generate a native editable `.vsdx` with `scripts/New-HardwareWiringVisio.ps1`; never satisfy the request by placing the complete SVG or screenshot as one flat image. For electrical wiring, create exactly one built-in `Dynamic Connector` master per declared connection, glue both ends, and store every intentional bend as a Geometry row inside that connector. Do not substitute `DrawPolyline`, a raster/vector wire image, or a chain of connector segments when the user requires independently editable Visio connectors.
 
 ## 5. Validate in layers
 
